@@ -1,0 +1,9 @@
+
+release: 'frodo'
+bootstrap:
+    - 'http://mirrors.xbmc.org/addons/${release}/'
+    - 'http://ftp.heanet.ie/mirrors/xbmc/addons/${release}/'
+addons: '${home}/.xbmc-replay/addons'
+store: '${home}/Downloads'
+settings:
+    - debug: false
