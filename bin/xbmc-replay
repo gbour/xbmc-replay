@@ -25,6 +25,7 @@ import yaml
 import optparse
 
 from xbmcreplay.config import Config
+from xbmcreplay.addons import Addons
 
 
 if __name__ == '__main__':
@@ -35,4 +36,5 @@ if __name__ == '__main__':
     (opts, args) = parser.parse_args()
     loader = Config({'home': os.environ['HOME']})
     config = loader.load(file(opts.config_file, 'rb'))
-    print config
+
+    addons = Addons(config['addons'])
