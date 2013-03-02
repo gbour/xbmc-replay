@@ -19,9 +19,13 @@
 __author__  = "Guillaume Bour <guillaume@bour.cc>"
 
 
+import os
 import sys
 import yaml
 import optparse
+
+from xbmcreplay.config import Config
+
 
 if __name__ == '__main__':
     parser = optparse.OptionParser()
@@ -29,5 +33,6 @@ if __name__ == '__main__':
         metavar='CONFIG-FILE', help='Configuration file')
 
     (opts, args) = parser.parse_args()
-    config = yaml.load(file(opts.config_file, 'rb').read())
-
+    loader = Config({'home': os.environ['HOME']})
+    config = loader.load(file(opts.config_file, 'rb'))
+    print config
