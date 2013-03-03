@@ -39,6 +39,9 @@ class Addons(object):
 
         #print self.addons
 
+    def get(self, addid):
+        return self.addons[addid]
+
 
 class Addon(object):
     def __init__(self, path):
@@ -61,7 +64,7 @@ class Addon(object):
             self.__stub__['entry'] = ep.attrib['library']
             self.__stub__['type']  = ep.getchildren()[0]
 
-        print self.__stub__
+        #print self.__stub__
 
     def __getattr__(self, name):
         if name in self.__stub__:
@@ -69,3 +72,5 @@ class Addon(object):
 
         raise AttributeError
 
+    def __str__(self):
+        return "<addon(%s)>" % self.id
