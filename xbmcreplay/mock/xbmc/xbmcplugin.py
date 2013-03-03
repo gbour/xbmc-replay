@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: UTF8 -*-
 
+import xbmc
+
 SORT_METHOD_UNSORTED=0
 SORT_METHOD_LABEL=1
 SORT_METHOD_DATE=2
@@ -13,14 +15,17 @@ def endOfDirectory(handle):
     pass
 
 def addDirectoryItem(handle, url, listitem, isFolder=False, totalItems=1):
-    print "addDirectoryItem:", handle, url, listitem
+    #print "addDirectoryItem:", handle, url, listitem
+    xbmc.CONTEXT.addEntry(listitem.label, url)
     return True
 
 def addSortMethod(handle, sortMethod):
     pass
 
 def setContent(handle, content):
-    print "setContent:", handle, content
+    #print "setContent:", handle, content
+    pass
 
 def setResolvedUrl(handle, succeeded, listitem):
-    print "setResolvedUrl:", listitem
+    #print "setResolvedUrl:", listitem
+    xbmc.CONTEXT.setUrl(listitem.path)

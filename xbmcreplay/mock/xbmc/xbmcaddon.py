@@ -4,6 +4,7 @@
 """Mocked xbmcaddon module
 """
 import os
+import xbmc
 
 class Addon(object):
     def __init__(self, id):
@@ -18,7 +19,10 @@ class Addon(object):
 
         return None
 
-    def getSetting(self, id):
+    def getSetting(self, key):
+        return xbmc.CONTEXT.setting(key)
+
+        """
         if id == 'autoplatform':
             return False
         if id == 'ostype':
@@ -29,8 +33,8 @@ class Addon(object):
             return 60*10 #10 minues, in seconds
         if id == 'debug':
             #return True
-            #return 'true'
-            return 'false'
+            return 'true'
+            #return 'false'
         if id == 'rtmpdump':
             return 'rtmpdump'
         if id == 'downloadMode':
@@ -43,7 +47,5 @@ class Addon(object):
         # tf1
         if id == 'preferhd':
             return 'true'
+        """
 
-
-
-        return None

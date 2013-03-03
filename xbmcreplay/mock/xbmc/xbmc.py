@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: UTF8 -*-
 
+#IMPORTANT: is replaced by ExecutionContext() instance at execution
+CONTEXT = None
+
 def translatePath(path):
     path = path.replace('special:/', '/tmp')
     return path
