@@ -130,7 +130,8 @@ class Addon(BaseAddon):
         ] + sys.path
         os.chdir(self.path)
        
-        sys.stdout = open('/dev/null', 'w')
+        if context.setting('debug') != 'true':
+            sys.stdout = open('/dev/null', 'w')
         #print sys.argv, sys.path
 
         import xbmc
@@ -143,8 +144,9 @@ class Addon(BaseAddon):
         sys.argv = old_sys[0]
         sys.path = old_sys[1]
         os.chdir(old_sys[2])
-        sys.stdout.close()
-        sys.stdout = old_sys[3]
+        if context.setting('debug') != 'true':
+            sys.stdout.close()
+            sys.stdout = old_sys[3]
         ###
 
         return context.result()
