@@ -25,6 +25,7 @@ import yaml
 import optparse
 
 from xbmcreplay.config import Config
+from xbmcreplay.mycmd  import Cmd
 from xbmcreplay.addons import Addons, ExecutionContext
 
 
@@ -44,23 +45,5 @@ if __name__ == '__main__':
     addons = Addons(config['addons'])
     ctx    = ExecutionContext(config['settings'])
 
-    # select addon
-    ids  = [x for x in addons.addons.keys() if opts.addon in x]
-    if len(ids) == 0:
-        print "No addon found matching '%s'" % opts.addon; sys.exit()
-    if len(ids) > 1:
-        print "More than one addon matching '%s':" % opts.addon
-        for _id in ids:
-            print " . %s" % _id
-        print "\nPlease precise your search"
-        sys.exit()
+    Cmd(addons).run()
 
-    addon = addons.get(ids[0])
-    ret   = addon.execute(opts.menu, ctx)
-    if 'menu' in ret:
-        print "** %s **" % addon.name
-        for label, path in ret['menu']:
-            print u" > {0:30s}: {1}".format(label, path)
-
-    else:
-        print 'video url=', ret['video']

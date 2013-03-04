@@ -35,12 +35,12 @@ class Addons(object):
         #TODO: check if writable
 
         for name in os.listdir(path):
-            addon = Addon(os.path.join(path, name), self)
+            addon = Addon(path=os.path.join(path, name), db=self)
             self.addons[addon.id] = addon
 
         # fake addon
         base = os.path.dirname(inspect.getmodule(self).__file__)
-        self.addons['xbmc.python'] = BaseAddon(path=os.path.join(base, 'mock', 'xbmc'))
+        self.addons['xbmc.python'] = BaseAddon(name='xbmc.python', path=os.path.join(base, 'mock', 'xbmc'))
 
         #print self.addons
 
@@ -49,7 +49,9 @@ class Addons(object):
 
 
 class BaseAddon(object):
-    def __init__(self, path):
+    def __init__(self, name=None, path=None):
+        if name is not None:
+            (self.id, self.name) = (name,name);
         self.path = os.path.abspath(path)
 
     def getpath(self):
@@ -57,9 +59,9 @@ class BaseAddon(object):
 
 
 class Addon(BaseAddon):
-    def __init__(self, path, db):
+    def __init__(self, name=None, path=None, db=None):
         #print path, "addon"
-        super(Addon, self).__init__(path)
+        super(Addon, self).__init__(name, path)
         self.db   = db
 
         xml = os.path.join(path, 'addon.xml')
