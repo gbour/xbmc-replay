@@ -7,6 +7,7 @@ class Cmd(cmd.Cmd):
     def __init__(self, addons):
         cmd.Cmd.__init__(self)
 
+        self.quit    = False
         self.addons  = addons
         self.context = self
 
@@ -15,7 +16,7 @@ class Cmd(cmd.Cmd):
         }
 
     def run(self):
-        while True:
+        while not self.quit:
             self.prompt = '$> '
             self.cmdloop()
 
@@ -25,6 +26,11 @@ class Cmd(cmd.Cmd):
     def switch_context(self, name):
         self.context = self.contexts[name]
         return True # stop cmdloop
+
+    def do_quit(self, *args):
+        print 'Bye...'
+        self.quit = True
+        return True
 
     def do_addons(self, subs, **kwargs):
         #print 'addons', args, kwargs
