@@ -4,13 +4,15 @@
 import cmd
 
 class Cmd(cmd.Cmd):
-    def __init__(self, addons):
+    def __init__(self, addons, xcontext):
         cmd.Cmd.__init__(self)
 
         self.quit    = False
         self.addons  = addons
-        self.context = self
+        # addons execution contet
+        self.xcontext = xcontext
 
+        self.context  = self
         self.contexts = {
             'addons': AddonsCmd(self.addons)
         }
@@ -58,7 +60,7 @@ class Cmd(cmd.Cmd):
             print "More than 1 addon matching '%', please precise" % cmd; return
 
         if len(args) == 0:
-            return self.switch_context(subcmd=AddonCmd(addons[0]))
+            return self.switch_context(subcmd=AddonCmd(addons[0], self.xcontext))
 
         return False
 
@@ -96,9 +98,12 @@ class AddonsCmd(cmd.Cmd):
         return True
 
 class AddonCmd(cmd.Cmd):
-    def __init__(self, addon):
+    def __init__(self, addon, xcontext):
         cmd.Cmd.__init__(self)
         self.addon = addon
+        self.xcontext = xcontext
+
+        self.dyn_completion = []
 
     def run(self):
         self.prompt = '$[\033[34m' + self.addon.id.split('.')[-1] + '\033[0m]> '
@@ -106,5 +111,29 @@ class AddonCmd(cmd.Cmd):
 
     def do_back(self, *args):
         return True
-        
 
+    def complete(self, text, state):
+        ret = cmd.Cmd.complete(self, text, state)
+        if state == 0 and len(self.dyn_completion) == 0:
+            menu = {}
+            try:
+                # default url '/' or '' ??? => 2d is better
+                menu = self.addon.execute('', self.xcontext)
+            except Exception, e:
+                print e
+            print "menu=",menu
+            if 'menu' in menu:
+                self.dyn_completion = [l for l,p in menu['menu']]
+
+            #print self.dyn_completion
+
+        if ret is None:
+            ret = [x for x in self.dyn_completion if x.lower().startswith(text.lower())]
+            if len(ret) > (state-len(self.completion_matches)):
+                ret = ret[state-len(self.completion_matches)]
+            else:
+                ret=None
+        return ret
+
+    def default(self, line):
+        print "default=", line

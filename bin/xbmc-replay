@@ -45,5 +45,5 @@ if __name__ == '__main__':
     addons = Addons(config['addons'])
     ctx    = ExecutionContext(config['settings'])
 
-    Cmd(addons).run()
+    Cmd(addons, ctx).run()
 
