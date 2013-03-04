@@ -103,14 +103,26 @@ class AddonCmd(cmd.Cmd):
         self.addon = addon
         self.xcontext = xcontext
 
+        self.stack = [('','')]
         self.dyn_completion = []
 
+    def update_prompt(self):
+        self.prompt = '$[\033[34m' + self.addon.id.split('.')[-1] + '\033[0m:'
+        for label, url in self.stack[1:]:
+            self.prompt += '\033[34m' + label + '\033[0m>'
+        self.prompt = self.prompt[:-1] + ']> '
+
     def run(self):
-        self.prompt = '$[\033[34m' + self.addon.id.split('.')[-1] + '\033[0m]> '
+        self.update_prompt()
         self.cmdloop()
 
     def do_back(self, *args):
-        return True
+        #print "back", args
+        self.stack.pop()
+        self.update_prompt()
+        del self.dyn_completion[:]
+
+        return (len(self.stack) == 0)
 
     def complete(self, text, state):
         ret = cmd.Cmd.complete(self, text, state)
@@ -118,12 +130,16 @@ class AddonCmd(cmd.Cmd):
             menu = {}
             try:
                 # default url '/' or '' ??? => 2d is better
-                menu = self.addon.execute('', self.xcontext)
+                #print "url=", self.stack[-1][1]
+                menu = self.addon.execute(self.stack[-1][1], self.xcontext)
             except Exception, e:
                 print e
-            print "menu=",menu
+            #print "menu=",menu
             if 'menu' in menu:
-                self.dyn_completion = [l for l,p in menu['menu']]
+                self.menu = dict([(l.encode('utf8'), p) for l,p in menu['menu']])
+                self.dyn_completion = [l for l in self.menu.keys()]
+            else:
+                print menu
 
             #print self.dyn_completion
 
@@ -136,4 +152,31 @@ class AddonCmd(cmd.Cmd):
         return ret
 
     def default(self, line):
-        print "default=", line
+        if line not in self.menu:
+            return
+
+        curmenu = self.menu[line]
+        self.stack.append((line, curmenu))
+        self.update_prompt()
+
+        # read menu content
+        menu = {}
+        try:
+           menu = self.addon.execute(self.stack[-1][1], self.xcontext)
+        except Exception, e:
+            print e
+        
+        if 'menu' in menu:
+            self.menu = dict([(l.encode('utf8'), p) for l,p in menu['menu']])
+            self.dyn_completion = [l for l in self.menu.keys()]
+        elif 'video' in menu:
+            self.video = menu['video']
+            self.dyn_completion = ['download','show']
+
+    def do_show(self, *args):
+        print 'url =', self.video
+
+    def do_download(self, *args):
+        print 'downloading...'
+
+
