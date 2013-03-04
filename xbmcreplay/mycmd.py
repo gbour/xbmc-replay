@@ -12,7 +12,7 @@ class Cmd(cmd.Cmd):
         self.context = self
 
         self.contexts = {
-            'addons': AddonCmd(self.addons)
+            'addons': AddonsCmd(self.addons)
         }
 
     def run(self):
@@ -23,8 +23,8 @@ class Cmd(cmd.Cmd):
             if self.context != self:
                 self.context.run()
 
-    def switch_context(self, name):
-        self.context = self.contexts[name]
+    def switch_context(self, name=None, subcmd=None):
+        self.context = self.contexts[name] if subcmd is None else subcmd
         return True # stop cmdloop
 
     def do_quit(self, *args):
@@ -43,8 +43,38 @@ class Cmd(cmd.Cmd):
         #print 'complete', args, kwargs
         return ('list',)
 
+    def completedefault(self, *args):
+        print "completedefault", args
 
-class AddonCmd(cmd.Cmd):
+    def default(self, command):
+        (cmd, args) = (command+' ').split(' ', 1)
+        
+        # try to match addon
+        addons = [a for a in self.addons.addons.values() if cmd.lower() in a.id.lower()]
+        if len(addons) == 0:
+            print "No addon matching '%s'" % cmd; return
+
+        if len(addons) > 1:
+            print "More than 1 addon matching '%', please precise" % cmd; return
+
+        if len(args) == 0:
+            return self.switch_context(subcmd=AddonCmd(addons[0]))
+
+        return False
+
+
+    # override complete()
+    def complete(self, text, state):
+        ret = cmd.Cmd.complete(self, text, state)
+        if state == 0:
+            self.dyn_completion = [a.id.split('.')[-1] for a in self.addons.addons.values() if 'video'
+                    in a.id and text.lower() in a.id.lower()]
+
+        if ret is None:
+            ret = self.dyn_completion[state-len(self.completion_matches)]
+        return ret
+
+class AddonsCmd(cmd.Cmd):
     def __init__(self, addons):
         cmd.Cmd.__init__(self)
         self.addons = addons
@@ -64,3 +94,17 @@ class AddonCmd(cmd.Cmd):
 
     def do_back(self, *args):
         return True
+
+class AddonCmd(cmd.Cmd):
+    def __init__(self, addon):
+        cmd.Cmd.__init__(self)
+        self.addon = addon
+
+    def run(self):
+        self.prompt = '$[\033[34m' + self.addon.id.split('.')[-1] + '\033[0m]> '
+        self.cmdloop()
+
+    def do_back(self, *args):
+        return True
+        
+
