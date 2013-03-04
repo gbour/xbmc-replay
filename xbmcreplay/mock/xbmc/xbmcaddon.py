@@ -20,32 +20,35 @@ class Addon(object):
         return None
 
     def getSetting(self, key):
-        return xbmc.CONTEXT.setting(key)
+        ret = xbmc.CONTEXT.setting(key)
+        if ret != 'none':
+            print "%s=%s" % (key, ret)
+            return ret
 
-        """
-        if id == 'autoplatform':
-            return False
-        if id == 'ostype':
+        if key == 'autoplatform':
+            return 'false'
+        if key == 'ostype':
             return 4 #Linux
-        if id == 'cputype':
+        if key == 'cputype':
             return 0 #32bit
-        if id == 'catalog_refresh_rate':
+        if key == 'catalog_refresh_rate':
             return 60*10 #10 minues, in seconds
-        if id == 'debug':
+        if key == 'debug':
             #return True
             return 'true'
             #return 'false'
-        if id == 'rtmpdump':
+        if key == 'rtmpdump':
             return 'rtmpdump'
-        if id == 'downloadMode':
+        if key == 'downloadMode':
             return 'false'
-        if id == 'downloadPath':
+        if key == 'downloadPath':
             return '/tmp'
-        if id == 'server':
+        if key == 'server':
             return 1
 
         # tf1
-        if id == 'preferhd':
+        if key == 'preferhd':
             return 'true'
-        """
 
+        print "%s setting not found!" % key
+        return None
