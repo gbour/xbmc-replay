@@ -1,0 +1,52 @@
+#!/usr/bin/python
+
+"""
+    python-pycurl
+    pyhon-requests
+
+    - progress callback
+    - limit download rate
+    - keepalive
+    - multipart download
+"""
+
+import sys
+import m3u8
+import os.path
+import requests
+from   urlparse  import urlparse, urlunparse
+
+if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        print "Usage: %s url [out]" % sys.argv[0]; sys.exit(1)
+
+    baseuri = urlparse(sys.argv[1])
+    m3u = m3u8.load(sys.argv[1])
+    print m3u
+    #print m3u.segments, m3u.is_variant
+
+    if m3u.is_variant:
+        print "VARIANT"
+        for item in m3u.playlists:
+            print '>',item
+            print item.uri, item.stream_info
+    else:
+        out = file(sys.argv[2], 'wb')
+
+        for segment in m3u.segments:
+            uri = urlparse(segment.uri)
+            if(uri.scheme == ''): #
+                uri = (baseuri.scheme, baseuri.netloc, os.path.dirname(baseuri.path) + '/' + uri.path, 
+                    uri.params, uri.query, uri.fragment)
+
+            uri = urlunparse(uri)
+            print ">", segment, type(segment), uri
+            r = requests.get(uri, stream=True)
+            while True:
+                data = r.raw.read(4096)
+                if len(data) == 0:
+                    break
+                
+                out.write(data)
+       
+        out.close() 
