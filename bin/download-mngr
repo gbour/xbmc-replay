@@ -14,14 +14,21 @@ import sys
 import m3u8
 import os.path
 import requests
+import threading
 from   urlparse  import urlparse, urlunparse
 
-if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        print "Usage: %s url [out]" % sys.argv[0]; sys.exit(1)
+PERCENT = 0
+LOCK    = threading.Lock()
 
-    baseuri = urlparse(sys.argv[1])
-    m3u = m3u8.load(sys.argv[1])
+def progression(percent):
+    global PERCENT
+
+    PERCENT = percent
+    LOCK.release()
+
+def download(source, destination='/tmp/foobar', progress_clb=None):
+    baseuri = urlparse(source)
+    m3u     = m3u8.load(source)
     print m3u
     #print m3u.segments, m3u.is_variant
 
@@ -31,16 +38,18 @@ if __name__ == '__main__':
             print '>',item
             print item.uri, item.stream_info
     else:
-        out = file(sys.argv[2], 'wb')
+        out = file(destination, 'wb')
 
+        nseg = 0
         for segment in m3u.segments:
+            nseg += 1
             uri = urlparse(segment.uri)
             if(uri.scheme == ''): #
                 uri = (baseuri.scheme, baseuri.netloc, os.path.dirname(baseuri.path) + '/' + uri.path, 
                     uri.params, uri.query, uri.fragment)
 
             uri = urlunparse(uri)
-            print ">", segment, type(segment), uri
+            #print ">", segment, type(segment), uri
             r = requests.get(uri, stream=True)
             while True:
                 data = r.raw.read(4096)
@@ -48,5 +57,32 @@ if __name__ == '__main__':
                     break
                 
                 out.write(data)
+
+            if progress_clb is not None:
+                progress_clb(float(nseg)/len(m3u.segments))
        
         out.close() 
+        LOCK.release()
+
+
+if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        print "Usage: %s url [out]" % sys.argv[0]; sys.exit(1)
+
+
+    t = threading.Thread(target=download,name='downloader',args=sys.argv[1:]+[progression])
+
+    print 'starting downloading...'
+    t.start()
+
+    # take a 1st time to lock
+    LOCK.acquire()
+    while t.is_alive():
+        LOCK.acquire()
+        print "progression: %2.0f%%" % (PERCENT*100)
+
+
+
+    t.join() 
+    print 'download complete'
+
