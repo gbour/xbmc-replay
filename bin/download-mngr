@@ -10,11 +10,15 @@
     - multipart download
 """
 
+import re
 import sys
+import time
 import m3u8
+import fcntl
 import os.path
 import requests
 import threading
+import subprocess
 from   urlparse  import urlparse, urlunparse
 
 PERCENT = 0
@@ -26,7 +30,7 @@ def progression(percent):
     PERCENT = percent
     LOCK.release()
 
-def download(source, destination='/tmp/foobar', progress_clb=None):
+def download_m3u8(source, destination='/tmp/foobar', progress_clb=None):
     baseuri = urlparse(source)
     m3u     = m3u8.load(source)
     print m3u
@@ -64,13 +68,58 @@ def download(source, destination='/tmp/foobar', progress_clb=None):
         out.close() 
         LOCK.release()
 
+def download_rtmp(source, destination='/tmp/foobar', progress_clb=None):
+    proc = subprocess.Popen(['rtmpdump','-e','-r',source,'-o',destination], 
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+    )
+
+    loop = True
+    def progress():
+        fd = proc.stdout.fileno()
+        fl = fcntl.fcntl(fd, fcntl.F_GETFL)
+        fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
+
+        while loop:
+            try:
+                output = proc.stdout.read().strip().split('\n')[-1]
+                m = re.match(".*\(([\d\.]+)%\).*", output)
+                if m:
+                    progress_clb(float(m.group(1))/100)
+            except Exception:
+                pass
+
+            time.sleep(.5)
+
+    t = threading.Thread(target=progress)
+    t.start()
+    proc.wait()
+
+    loop = False
+    t.join()
+    LOCK.release()
+
+def download(source, destination, progress_clb):
+    dwnloader = None
+
+    if source.endswith('.m3u8'):
+        dwnloader = download_m3u8
+    else:
+        scheme = source.split(':', 1)[0]
+        if scheme.startswith('rtmp'):
+            dwnloader = download_rtmp
+
+    if dwnloader is None:
+        print "Cannot download '%s' stream (unknown stream type)" % source; return None
+    
+    return threading.Thread(target=dwnloader,name='downloader',args=(source, destination, progress_clb))
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         print "Usage: %s url [out]" % sys.argv[0]; sys.exit(1)
 
-
-    t = threading.Thread(target=download,name='downloader',args=sys.argv[1:]+[progression])
+    t = download(*(sys.argv[1:]+[progression]))
+    if t is None:
+        sys.exit(1)
 
     print 'starting downloading...'
     t.start()
@@ -80,7 +129,6 @@ if __name__ == '__main__':
     while t.is_alive():
         LOCK.acquire()
         print "progression: %2.0f%%" % (PERCENT*100)
-
 
 
     t.join() 
