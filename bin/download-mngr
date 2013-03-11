@@ -10,16 +10,18 @@
     - multipart download
 """
 
+
 import re
 import sys
 import time
 import m3u8
 import fcntl
+import prctl
 import os.path
 import requests
 import threading
 import subprocess
-from   urlparse  import urlparse, urlunparse
+from   urlparse    import urlparse, urlunparse
 
 PERCENT = 0
 LOCK    = threading.Lock()
@@ -31,6 +33,7 @@ def progression(percent):
     LOCK.release()
 
 def download_m3u8(source, destination='/tmp/foobar', progress_clb=None):
+    prctl.set_name('M3U8 downloader')
     baseuri = urlparse(source)
     m3u     = m3u8.load(source)
     print m3u
@@ -69,12 +72,15 @@ def download_m3u8(source, destination='/tmp/foobar', progress_clb=None):
         LOCK.release()
 
 def download_rtmp(source, destination='/tmp/foobar', progress_clb=None):
+    prctl.set_name('RTMP downloader')
     proc = subprocess.Popen(['rtmpdump','-e','-r',source,'-o',destination], 
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT
     )
 
     loop = True
     def progress():
+        prctl.set_name('rtmp progress')
+
         fd = proc.stdout.fileno()
         fl = fcntl.fcntl(fd, fcntl.F_GETFL)
         fcntl.fcntl(fd, fcntl.F_SETFL, fl | os.O_NONBLOCK)
