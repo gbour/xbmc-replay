@@ -106,6 +106,8 @@ class AddonCmd(cmd.Cmd):
         self.stack = [('','')]
         self.dyn_completion = []
 
+        self.video = None
+
     def update_prompt(self):
         self.prompt = '$[\033[34m' + self.addon.id.split('.')[-1] + '\033[0m:'
         for label, url in self.stack[1:]:
