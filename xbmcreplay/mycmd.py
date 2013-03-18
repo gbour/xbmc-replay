@@ -125,6 +125,10 @@ class AddonCmd(cmd.Cmd):
         return (len(self.stack) == 0)
 
     def _init_completion(self):
+        """
+
+            \xc2\xa0 == unicode non-breaking space
+        """
         menu = {}
         self.dyn_completion = []
         try:
@@ -136,7 +140,7 @@ class AddonCmd(cmd.Cmd):
         #print "menu=",menu
         if 'menu' in menu:
             try:
-                self.menu = dict([(l.encode('utf8'), p) for l,p in menu['menu']])
+                self.menu = dict([(l.encode('utf8').replace(' ','\xc2\xa0'), p) for l,p in menu['menu']])
                 self.dyn_completion = self.menu.keys()
             except Exception, e:
                 print e
