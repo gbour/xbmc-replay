@@ -124,24 +124,36 @@ class AddonCmd(cmd.Cmd):
 
         return (len(self.stack) == 0)
 
-    def complete(self, text, state):
-        ret = cmd.Cmd.complete(self, text, state)
-        if state == 0 and len(self.dyn_completion) == 0:
-            menu = {}
+    def _init_completion(self):
+        menu = {}
+        self.dyn_completion = []
+        try:
+            # default url '/' or '' ??? => 2d is better
+            #print "url=", self.stack[-1][1]
+            menu = self.addon.execute(self.stack[-1][1], self.xcontext)
+        except Exception, e:
+            print e
+        #print "menu=",menu
+        if 'menu' in menu:
             try:
-                # default url '/' or '' ??? => 2d is better
-                #print "url=", self.stack[-1][1]
-                menu = self.addon.execute(self.stack[-1][1], self.xcontext)
+                self.menu = dict([(l.encode('utf8'), p) for l,p in menu['menu']])
+                self.dyn_completion = self.menu.keys()
             except Exception, e:
                 print e
-            #print "menu=",menu
-            if 'menu' in menu:
-                self.menu = dict([(l.encode('utf8'), p) for l,p in menu['menu']])
-                self.dyn_completion = [l for l in self.menu.keys()]
-            else:
-                print menu
+            #print "::",self.dyn_completion,",",self.menu
+        else:
+            #print menu
+            try:
+                self.video = menu['video']
+                self.dyn_completion = ['download','show']
+            except Exception, e:
+                print e
 
-            #print self.dyn_completion
+    def complete(self, text, state):
+        #print 'complete=', text, state
+        ret = cmd.Cmd.complete(self, text, state)
+        if state == 0 and len(self.dyn_completion) == 0:
+            self._init_completion()
 
         if ret is None:
             ret = [x for x in self.dyn_completion if x.lower().startswith(text.lower())]
@@ -152,6 +164,7 @@ class AddonCmd(cmd.Cmd):
         return ret
 
     def default(self, line):
+        #print 'default=', line
         if line not in self.menu:
             return
 
@@ -160,18 +173,7 @@ class AddonCmd(cmd.Cmd):
         self.update_prompt()
 
         # read menu content
-        menu = {}
-        try:
-           menu = self.addon.execute(self.stack[-1][1], self.xcontext)
-        except Exception, e:
-            print e
-        
-        if 'menu' in menu:
-            self.menu = dict([(l.encode('utf8'), p) for l,p in menu['menu']])
-            self.dyn_completion = [l for l in self.menu.keys()]
-        elif 'video' in menu:
-            self.video = menu['video']
-            self.dyn_completion = ['download','show']
+        self._init_completion()
 
     def do_show(self, *args):
         print 'url =', self.video
