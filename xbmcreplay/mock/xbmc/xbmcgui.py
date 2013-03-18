@@ -8,6 +8,8 @@ class ListItem(object):
         self.thumb = thumbnailImage
         self.path  = path
 
+        self.properties = dict()
+
     def addContextMenuItems(self, menu, replaceItems=False):
         pass
 
@@ -15,7 +17,8 @@ class ListItem(object):
         print "%s / %s" % (type, infoLabels)
 
     def setProperty(self, key, value):
-        pass
+        print "%s: property(%s=%s)" % (self.label, key, value)
+        self.properties[key] = value
 
     def __str__(self):
         return (u"ListItem(%s, %s)" % (self.label, self.path)).encode('utf8')
