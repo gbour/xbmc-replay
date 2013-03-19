@@ -2,6 +2,9 @@
 # -*- coding: UTF8 -*-
 
 import cmd
+from downloader import *
+
+MNGR = DownloadManager()
 
 class Cmd(cmd.Cmd):
     def __init__(self, addons, xcontext):
@@ -183,6 +186,18 @@ class AddonCmd(cmd.Cmd):
         print 'url =', self.video
 
     def do_download(self, *args):
-        print 'downloading...'
+        print 'downloading...', self.video
+        if self.video is None:
+            return
+
+        dwn = MNGR.select(self.video, instanciate=True)
+        print "downloader= ", dwn
+        if dwn is None:
+            return
+
+        opts = dwn.options()
+        print opts
+
+
 
 

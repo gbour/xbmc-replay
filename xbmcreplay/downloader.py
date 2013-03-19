@@ -1,5 +1,6 @@
 # -*- coding: UTF8 -*-
 
+import m3u8
 import inspect
 import threading
 
@@ -43,30 +44,35 @@ class DownloadManager(object):
 
 
 class AbstractDownloader(object):
-    def __init__(self):
-        pass
+    def __init__(self, uri):
+        self.uri = uri
 
     @staticmethod
     def do_i_know(uri):
         return False
 
-    @staticmethod
-    def options(uri):
-        opts = {}
-        
-        target = m3u8.load(uri)
-        if target.is_variant:
-            opts
-
-
-    @staticmethod(uri, bandwidth='higher'):
-
+    def options(self):
+        return {}
 
 
 class M3u8Downloader(AbstractDownloader):
+    def __init__(self, uri):
+        super(M3u8Downloader, self).__init__(uri)
+        self.target = m3u8.load(uri)
+        self.opts   = {}
+
     @staticmethod
-    def do_i_know(self, uri):
+    def do_i_know(uri):
         return uri.endswith('m3u8')
+
+    def options(self):
+        if self.target.is_variant:
+            self.opts['bandwidth'] = {
+                'choices': [s.stream_info.bandwidth for s in self.target.playlists]+['max','min'],
+                'default': 'max'
+            }
+
+        return self.opts
 
 class RTMPDownloader(AbstractDownloader):
     @staticmethod
