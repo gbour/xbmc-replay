@@ -17,7 +17,10 @@ class Cmd(cmd.Cmd):
             'addons': AddonsCmd(self.addons)
         }
 
-    def run(self):
+    def run(self, path=[]):
+        if len(path) > 0 and self.default(path[0]):
+            self.context.run(path=path[1:])
+
         while not self.quit:
             self.prompt = '$> '
             self.cmdloop()
@@ -108,13 +111,30 @@ class AddonCmd(cmd.Cmd):
 
         self.video = None
 
+        menu = {}
+        try:
+            # default url '/' or '' ??? => 2d is better
+            #print "url=", self.stack[-1][1]
+            menu = self.addon.execute(self.stack[-1][1], self.xcontext)
+        except Exception, e:
+            print e
+        #print "menu=",menu
+        if 'menu' in menu:
+            self.menu = dict([(l.encode('utf8'), p) for l,p in menu['menu']])
+            self.dyn_completion = [l for l in self.menu.keys()]
+        else:
+            print menu
+
     def update_prompt(self):
         self.prompt = '$[\033[34m' + self.addon.id.split('.')[-1] + '\033[0m:'
         for label, url in self.stack[1:]:
             self.prompt += '\033[34m' + label + '\033[0m>'
         self.prompt = self.prompt[:-1] + ']> '
 
-    def run(self):
+    def run(self, path=[]):
+        for mentry in path:
+            self.default(mentry)
+
         self.update_prompt()
         self.cmdloop()
 
