@@ -16,7 +16,7 @@ def endOfDirectory(handle):
 
 def addDirectoryItem(handle, url, listitem, isFolder=False, totalItems=1):
     #print "addDirectoryItem:", handle, url, listitem
-    xbmc.CONTEXT.addEntry(listitem.label, url)
+    xbmc.CONTEXT.addEntry(listitem.label.strip(), url)
     return True
 
 def addSortMethod(handle, sortMethod):
