@@ -27,6 +27,21 @@ class DownloadManager(object):
         self.threads[t.ident] = t
         return True
 
+    def select(self, uri, instanciate=False):
+        match = [h for h in self.handlers if h.do_i_know(uri)]
+        if len(match) == 0:
+            # no match
+            return None
+        elif len(match)> 1:
+            # more than 1 handler found
+            return None
+
+        m = match[0]
+        if instanciate:
+            m = m(uri)
+        return m
+
+
 class AbstractDownloader(object):
     def __init__(self):
         pass
