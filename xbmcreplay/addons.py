@@ -137,7 +137,8 @@ class Addon(BaseAddon):
         xbmc.CONTEXT = context
 
         context._result = {}
-        execfile(self.entry, {'sys': sys, '__name__': '__main__'})
+        import runpy
+        runpy.run_path(self.entry, run_name='__main__')
     
         # restore sys values
         sys.argv = old_sys[0]
