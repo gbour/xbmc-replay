@@ -11,7 +11,7 @@ SORT_METHOD_VIDEO_RUNTIME=3
 def setPluginCategory(handle, category):
     return ''
 
-def endOfDirectory(handle):
+def endOfDirectory(handle, *args, **kwargs):
     pass
 
 def addDirectoryItem(handle, url, listitem, isFolder=False, totalItems=1):
