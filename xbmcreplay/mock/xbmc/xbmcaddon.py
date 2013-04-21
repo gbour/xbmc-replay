@@ -11,7 +11,7 @@ class Addon(object):
         self.id = id
 
     def getLocalizedString(self, id):
-        return ''
+        return xbmc.ADDON.getString(id)
 
     def getAddonInfo(self, id):
         if id == 'path':
