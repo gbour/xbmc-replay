@@ -81,6 +81,8 @@ class Addon(BaseAddon):
                 self.__stub__['type']  = 'module'
             elif pt == 'xbmc.addon.metadata':
                 pass
+            elif pt == 'xbmc.service':
+                pass
 
             else:
                 raise Exception("Unknown addon type: %s" %
