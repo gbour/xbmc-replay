@@ -83,6 +83,8 @@ class Addon(BaseAddon):
                 self.__stub__['type']  = 'module'
             elif pt == 'xbmc.addon.metadata':
                 pass
+            elif pt == 'xbmc.service':
+                pass
 
             else:
                 raise Exception("Unknown addon type: %s" %
@@ -96,6 +98,24 @@ class Addon(BaseAddon):
             ])
 
         #import pprint; pprint.pprint(self.__stub__)
+        self.strings = None
+
+    def loadStrings(self, lang='english'):
+        langpath = os.path.join(self.path, 'resources', 'language',lang)
+        if not os.path.exists(langpath):
+            print "%s language not set" % langpath; return False
+
+        langfile = os.path.join(langpath, 'strings.xml')
+        if not os.path.exists(os.path.join(langfile)):
+            print "%s language file not dound" % langfile; return False
+
+        self.strings = dict()
+        
+        root = objectify.parse(file(langfile, 'r')).getroot()
+        for node in root.findall('string'):
+            self.strings[int(node.get('id'))] = node.text
+
+        return True
 
     def getpath(self):
         path = self.path
@@ -103,6 +123,12 @@ class Addon(BaseAddon):
         if self.type == 'module':
             path = os.path.join(path, self.entry)
         return path
+
+    def getString(self, id):
+        if self.strings is None and not self.loadStrings():
+            return '<fail>'
+
+        return self.strings.get(id, "id(%d)" % id)
 
     def execute(self, param='/', context=None):
         #print sys.argv
@@ -136,9 +162,11 @@ class Addon(BaseAddon):
 
         import xbmc
         xbmc.CONTEXT = context
+        xbmc.ADDON   = self
 
         context._result = {}
-        execfile(self.entry, {'sys': sys, '__name__': '__main__'})
+        import runpy
+        runpy.run_path(self.entry, run_name='__main__')
     
         # restore sys values
         sys.argv = old_sys[0]

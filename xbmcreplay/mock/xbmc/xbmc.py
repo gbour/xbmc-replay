@@ -3,6 +3,7 @@
 
 #IMPORTANT: is replaced by ExecutionContext() instance at execution
 CONTEXT = None
+ADDON   = None
 
 def translatePath(path):
     path = path.replace('special:/', '/tmp')
@@ -15,3 +16,5 @@ def getCacheThumbName(path):
 def executebuiltin(function, wait=False):
     print "executebuiltin:", function, wait
 
+def getSkinDir():
+    return ''
