@@ -17,6 +17,7 @@ import time
 import m3u8
 import fcntl
 import prctl
+import urllib
 import os.path
 import requests
 import threading
@@ -31,6 +32,54 @@ def progression(percent):
 
     PERCENT = percent
     LOCK.release()
+
+
+def download_http(source, destination='/tmp/foobar', progress_clb=None, params={}):
+    global max
+    current, max = 0, 9999999999999
+
+    def on_response(resp):
+        global max
+        print resp.url, resp.headers
+        max = int(resp.headers.get('content-length', 9999999999999999))
+
+    out = file(destination, 'wb')
+    req = requests.get(source, headers=params, stream=True, hooks={'response': on_response})
+    while not EXIT:
+        data = req.raw.read(4096)
+        if len(data) == 0:
+            break
+                
+        out.write(data)
+        if progress_clb is not None:
+            current += len(data)
+            progress_clb(float(current)/max)
+    out.close()
+
+
+def download_stack(source, destination='/tmp/foobar', progress_clb=None):
+    prctl.set_name('STACK downloader')
+
+    i = 1
+    # removing heading 'stack://'
+    for part in source[8:].split(','):
+        uri, params = part.strip().split('|')
+        params = dict([(urllib.unquote(k), urllib.unquote(v)) for (k,v) in [p.strip().split('=') for p in params.split('&')]])
+        print uri, params
+
+        d = match_downloader(uri)
+        if d is None:
+            print "stack:: no downloader found for '%s' uri" % uri; continue
+
+        _dest = destination.rsplit('.',1)[0] + ("-%02d" % i) + ('.'+destination.rsplit('.',1)[1] if '.' in destination else '')
+        d(uri, _dest, progress_clb, params)
+        i += 1
+
+        if EXIT:
+            break
+
+    lock_release()
+
 
 def download_m3u8(source, destination='/tmp/foobar', progress_clb=None):
     prctl.set_name('M3U8 downloader')
@@ -104,20 +153,29 @@ def download_rtmp(source, destination='/tmp/foobar', progress_clb=None):
     t.join()
     LOCK.release()
 
-def download(source, destination, progress_clb):
-    dwnloader = None
 
+def match_downloader(source):
     if source.endswith('.m3u8'):
-        dwnloader = download_m3u8
+        return download_m3u8
     else:
         scheme = source.split(':', 1)[0]
         if scheme.startswith('rtmp'):
-            dwnloader = download_rtmp
+            return download_rtmp
+        elif scheme.startswith('stack'):
+            return download_stack
+        elif scheme.startswith('http'):
+            return download_http
 
+    return None
+
+
+def download(source, destination, progress_clb):
+    dwnloader = match_downloader(source)
     if dwnloader is None:
         print "Cannot download '%s' stream (unknown stream type)" % source; return None
     
     return threading.Thread(target=dwnloader,name='downloader',args=(source, destination, progress_clb))
+
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
