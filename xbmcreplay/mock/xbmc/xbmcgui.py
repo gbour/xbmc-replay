@@ -5,7 +5,11 @@ class ListItem(object):
     def __init__(self, label=None, thumbnailImage=None,
                  path=None, iconImage=None, **kwargs):
         print "item", label, kwargs, path
-        self.label = label.decode('utf8',errors='ignore') if label is not None else None
+        try:
+            self.label = label.decode('utf8',errors='ignore') if label is not None else None
+        except:
+            self.label = label
+
         self.thumb = thumbnailImage
         self.path  = path
 
