@@ -24,14 +24,21 @@ import threading
 import subprocess
 from   urlparse    import urlparse, urlunparse
 
+EXIT    = False
 PERCENT = 0
 LOCK    = threading.Lock()
+
+def lock_release():
+    try:
+        LOCK.release()
+    except threading.ThreadError:
+        pass
 
 def progression(percent):
     global PERCENT
 
     PERCENT = percent
-    LOCK.release()
+    lock_release()
 
 
 def download_http(source, destination='/tmp/foobar', progress_clb=None, params={}):
@@ -107,18 +114,21 @@ def download_m3u8(source, destination='/tmp/foobar', progress_clb=None):
             uri = urlunparse(uri)
             #print ">", segment, type(segment), uri
             r = requests.get(uri, stream=True)
-            while True:
+            while not EXIT:
                 data = r.raw.read(4096)
                 if len(data) == 0:
                     break
                 
                 out.write(data)
 
+            if EXIT:
+                break
             if progress_clb is not None:
                 progress_clb(float(nseg)/len(m3u.segments))
        
         out.close() 
         LOCK.release()
+
 
 def download_rtmp(source, destination='/tmp/foobar', progress_clb=None):
     prctl.set_name('RTMP downloader')
@@ -190,11 +200,26 @@ if __name__ == '__main__':
 
     # take a 1st time to lock
     LOCK.acquire()
-    while t.is_alive():
-        LOCK.acquire()
-        print "progression: %2.0f%%" % (PERCENT*100)
 
+    try:
+        previous = ''
+        while t.is_alive():
+            try:
+                LOCK.acquire()
+            except:
+                break
 
-    t.join() 
-    print 'download complete'
+            current = "%2.0f" % (PERCENT*100)
+            if current == previous:
+                continue
+
+            previous = current
+            print "progression: %s%%" % current
+    except Exception:
+        print "Interrupting..."
+    else:
+        print "Download complete"
+
+    EXIT = True
+    t.join(3)
 
